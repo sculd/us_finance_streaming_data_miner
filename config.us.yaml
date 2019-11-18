@@ -1,7 +1,5 @@
-schedule:
-    daily_ingestion_start: '20:00:00'
-    daily_last_record_ingestion_start: '15:40:00'
-    intraday_ingestion_start: '15:45:00'
+market:
+    open: "09:30:00"
+    close: "16:00:00"
+    ingest_end: "15:50:00"
     timezone: US/EASTERN
-logname: us_finance_data_miner
-uploadname: us.daily.csv

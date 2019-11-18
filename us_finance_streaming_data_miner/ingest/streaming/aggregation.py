@@ -1,6 +1,5 @@
-from collections import defaultdict
 import pandas as pd
-import datetime
+import datetime, os
 import pytz
 
 from enum import Enum
@@ -51,8 +50,12 @@ class BarWithTime:
         return self.time + datetime.timedelta(minutes=1)
 
     @staticmethod
-    def get_tuple_names():
+    def get_minute_tuple_names():
         return ('datetime',) + Bar.get_tuple_names()
+
+    @staticmethod
+    def get_daily_tuple_names():
+        return ('date',) + Bar.get_tuple_names()
 
     def to_tuple(self):
         return (self.time,) + self.bar.to_tuple()
@@ -94,11 +97,11 @@ class Aggregation:
 
     def get_minute_df(self):
         tuples = list(map(lambda b: b.to_tuple(), self.bar_with_times))
-        return pd.DataFrame(tuples, columns = BarWithTime.get_tuple_names())
+        return pd.DataFrame(tuples, columns = BarWithTime.get_minute_tuple_names())
 
     def get_daily_df(self):
         df_minute = self.get_minute_df()
-        df_daily = pd.DataFrame(columns = ['date', 'symbol', 'open', 'high', 'low', 'close', 'volume']).append(
+        df_daily = pd.DataFrame(columns = BarWithTime.get_daily_tuple_names()).append(
             {
                 'date': df_minute.datetime.dt.date.iloc[0],
                 'symbol': df_minute.symbol.iloc[0],
@@ -112,23 +115,51 @@ class Aggregation:
 
 class Aggregations:
     def __init__(self):
-        self.aggregations = {}
+        self.aggregation_per_symbol = {}
+
+    def clean(self):
+        self.aggregation_per_symbol = {}
 
     def on_trade(self, trade):
-        if trade.symbol not in self.aggregations:
-            self.aggregations[trade.symbol] = Aggregation(trade.symbol)
-        self.aggregations[trade.symbol].on_trade(trade)
+        if trade.symbol not in self.aggregation_per_symbol:
+            self.aggregation_per_symbol[trade.symbol] = Aggregation(trade.symbol)
+        self.aggregation_per_symbol[trade.symbol].on_trade(trade)
 
     def get_minute_df(self):
-        df = pd.DataFrame()
-        for _, aggregation in self.aggregations.items():
+        df = pd.DataFrame(columns=BarWithTime.get_minute_tuple_names())
+        for _, aggregation in self.aggregation_per_symbol.items():
             df_ = aggregation.get_minute_df()
             df = df.append(df_)
-        return df
+        return df.set_index('datetime')
 
     def get_daily_df(self):
-        df = pd.DataFrame()
-        for _, aggregation in self.aggregations.items():
+        df = pd.DataFrame(columns=BarWithTime.get_daily_tuple_names())
+        for _, aggregation in self.aggregation_per_symbol.items():
             df_ = aggregation.get_daily_df()
             df = df.append(df_)
-        return df
+        return df.set_index('date')
+
+class AggregationsRun:
+    def __init__(self):
+        self.aggregations = Aggregations()
+        self.daily_trade_started = True
+
+    def print_msg(self, msg):
+        print('[print_msg]', msg)
+
+    def on_trade(self, trade):
+        if self.daily_trade_started:
+            self.aggregations.on_trade(trade)
+
+    def on_daily_trade_start(self):
+        self.daily_trade_started = True
+
+    def on_daily_trade_end(self, base_dir='data'):
+        self.daily_trade_started = False
+        df_minute = self.aggregations.get_minute_df()
+        df_daily = self.aggregations.get_daily_df()
+        if not os.path.exists(base_dir):
+            os.mkdir(base_dir)
+        df_minute.to_csv('{base_dir}/minute.csv'.format(base_dir=base_dir))
+        df_daily.to_csv('{base_dir}/daily.csv'.format(base_dir=base_dir))
+        self.aggregations.clean()

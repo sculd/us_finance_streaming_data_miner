@@ -1,7 +1,31 @@
 import unittest, datetime
 import pytz
 
-from ingest.streaming.aggregation import Aggregations, Aggregation, BarWithTime, Bar, Trade
+from us_finance_streaming_data_miner.ingest.streaming.aggregation import AggregationsRun, Aggregations, Aggregation, BarWithTime, Bar, Trade
+
+class TestBar(unittest.TestCase):
+    def test_bar_on_trade(self):
+        symbol = 'DUMMY_SYMBOL'
+        bar = Bar.new_bar_with_trade(symbol, 100, 1.0)
+        self.assertEqual(100, bar.open)
+        self.assertEqual(100, bar.high)
+        self.assertEqual(100, bar.low)
+        self.assertEqual(100, bar.close)
+        self.assertEqual(1, bar.volume)
+
+        bar.on_trade(Trade(0, symbol, 110.0, 1.0))
+        self.assertEqual(100, bar.open)
+        self.assertEqual(110, bar.high)
+        self.assertEqual(100, bar.low)
+        self.assertEqual(110, bar.close)
+        self.assertEqual(2, bar.volume)
+
+        bar.on_trade(Trade(0, symbol, 90.0, 1.0))
+        self.assertEqual(100, bar.open)
+        self.assertEqual(110, bar.high)
+        self.assertEqual(90, bar.low)
+        self.assertEqual(90, bar.close)
+        self.assertEqual(3, bar.volume)
 
 class TestAggregation(unittest.TestCase):
     def test_on_trade(self):
@@ -101,17 +125,17 @@ class TestAggregations(unittest.TestCase):
         symbol_2 = 'SYM2'
 
         aggregations.on_trade(Trade(0, symbol_1, 100.0, 1.0))
-        self.assertEqual(1, len(aggregations.aggregations))
+        self.assertEqual(1, len(aggregations.aggregation_per_symbol))
 
         aggregations.on_trade(Trade(0, symbol_2, 120.0, 1.0))
-        self.assertEqual(2, len(aggregations.aggregations))
+        self.assertEqual(2, len(aggregations.aggregation_per_symbol))
 
         aggregations.on_trade(Trade(1, symbol_1, 110.0, 1.0))
         aggregations.on_trade(Trade(one_minute_seconds, symbol_1, 120.0, 1.0))
         aggregations.on_trade(Trade(one_minute_seconds + 1, symbol_1, 130.0, 1.0))
-        self.assertEqual(2, len(aggregations.aggregations))
+        self.assertEqual(2, len(aggregations.aggregation_per_symbol))
 
-        aggregation_1 = aggregations.aggregations[symbol_1]
+        aggregation_1 = aggregations.aggregation_per_symbol[symbol_1]
         self.assertEqual(2, len(aggregation_1.bar_with_times))
 
         bar_1_t_0 = aggregation_1.bar_with_times[0]
@@ -151,7 +175,7 @@ class TestAggregations(unittest.TestCase):
         t_one_minute_tz = pytz.utc.localize(t_one_minute)
         self.assertEqual(3, len(df))
         row_0 = df.iloc[0]
-        self.assertEqual(t_zero_epoch_tz, row_0.datetime)
+        self.assertEqual(t_zero_epoch_tz, row_0.name)
         self.assertEqual('SYM1', row_0.symbol)
         self.assertEqual(100, row_0.open)
         self.assertEqual(110, row_0.high)
@@ -160,7 +184,7 @@ class TestAggregations(unittest.TestCase):
         self.assertEqual(2, row_0.volume)
 
         row_1 = df.iloc[1]
-        self.assertEqual(t_one_minute_tz, row_1.datetime)
+        self.assertEqual(t_one_minute_tz, row_1.name)
         self.assertEqual('SYM1', row_1.symbol)
         self.assertEqual(120, row_1.open)
         self.assertEqual(130, row_1.high)
@@ -169,7 +193,7 @@ class TestAggregations(unittest.TestCase):
         self.assertEqual(2, row_1.volume)
 
         row_2 = df.iloc[2]
-        self.assertEqual(t_zero_epoch_tz, row_2.datetime)
+        self.assertEqual(t_zero_epoch_tz, row_2.name)
         self.assertEqual('SYM2', row_2.symbol)
         self.assertEqual(120, row_2.open)
         self.assertEqual(120, row_2.high)
@@ -194,7 +218,7 @@ class TestAggregations(unittest.TestCase):
 
         self.assertEqual(2, len(df))
         row_0 = df.iloc[0]
-        self.assertEqual(d_zero_epoch, row_0.date)
+        self.assertEqual(d_zero_epoch, row_0.name)
         self.assertEqual('SYM1', row_0.symbol)
         self.assertEqual(100, row_0.open)
         self.assertEqual(130, row_0.high)
@@ -203,7 +227,7 @@ class TestAggregations(unittest.TestCase):
         self.assertEqual(4, row_0.volume)
 
         row_1 = df.iloc[1]
-        self.assertEqual(d_zero_epoch, row_1.date)
+        self.assertEqual(d_zero_epoch, row_1.name)
         self.assertEqual('SYM2', row_1.symbol)
         self.assertEqual(120, row_1.open)
         self.assertEqual(120, row_1.high)
@@ -211,29 +235,31 @@ class TestAggregations(unittest.TestCase):
         self.assertEqual(120, row_1.close)
         self.assertEqual(1, row_1.volume)
 
-class TestBar(unittest.TestCase):
-    def test_bar_on_trade(self):
-        symbol = 'DUMMY_SYMBOL'
-        bar = Bar.new_bar_with_trade(symbol, 100, 1.0)
-        self.assertEqual(100, bar.open)
-        self.assertEqual(100, bar.high)
-        self.assertEqual(100, bar.low)
-        self.assertEqual(100, bar.close)
-        self.assertEqual(1, bar.volume)
+class TestAggregationsRun(unittest.TestCase):
+    def test_on_trade(self):
+        aggregations_run = AggregationsRun()
+        one_minute_seconds = 60
+        symbol_1 = 'SYM1'
+        symbol_2 = 'SYM2'
 
-        bar.on_trade(Trade(0, symbol, 110.0, 1.0))
-        self.assertEqual(100, bar.open)
-        self.assertEqual(110, bar.high)
-        self.assertEqual(100, bar.low)
-        self.assertEqual(110, bar.close)
-        self.assertEqual(2, bar.volume)
+        one_day_seconds = 3600 * 24
 
-        bar.on_trade(Trade(0, symbol, 90.0, 1.0))
-        self.assertEqual(100, bar.open)
-        self.assertEqual(110, bar.high)
-        self.assertEqual(90, bar.low)
-        self.assertEqual(90, bar.close)
-        self.assertEqual(3, bar.volume)
+        aggregations_run.on_trade(Trade(0, symbol_1, 100.0, 1.0))
+        aggregations_run.on_trade(Trade(one_minute_seconds, symbol_1, 110.0, 1.0))
+        aggregations_run.on_trade(Trade(0, symbol_2, 9.0, 1.0))
 
-if __name__ == '__main__':
-    unittest.main()
+        aggregations_run.on_daily_trade_end(base_dir='data_unittest')
+        self.assertEqual(0, len(aggregations_run.aggregations.aggregation_per_symbol))
+        aggregations_run.on_trade(Trade(one_minute_seconds * 2, symbol_1, 120.0, 1.0))
+        self.assertEqual(0, len(aggregations_run.aggregations.aggregation_per_symbol))
+
+        aggregations_run.on_daily_trade_start()
+        aggregations_run.on_daily_trade_end(base_dir='data_unittest')
+        self.assertEqual(0, len(aggregations_run.aggregations.aggregation_per_symbol))
+
+        aggregations_run.on_daily_trade_start()
+        aggregations_run.on_trade(Trade(one_day_seconds, symbol_1, 120.0, 1.0))
+        self.assertEqual(1, len(aggregations_run.aggregations.aggregation_per_symbol))
+        aggregations_run.on_daily_trade_end(base_dir='data_unittest')
+        self.assertEqual(0, len(aggregations_run.aggregations.aggregation_per_symbol))
+

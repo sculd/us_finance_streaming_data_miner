@@ -10,7 +10,7 @@ def _get_client():
     return _client
 
 def get_logger(cfg):
-    return _get_client().logger(config.get_log_name(cfg))
+    return _get_client().logger('us_finance_streaming_data_miner')
 
 def _print_with_severity_prefix(severity, text):
     print('{severity}: {text}'.format(severity=severity, text=text))

@@ -1,9 +1,10 @@
 import json, os
 from pytz import timezone
-import ingest.streaming.aggregation
+import us_finance_streaming_data_miner.ingest.streaming.aggregation
 import websockets
-import util.symbols
-import util.logging as logging
+from us_finance_streaming_data_miner import util
+import us_finance_streaming_data_miner.util.logging as logging
+import us_finance_streaming_data_miner.util.symbols
 
 _TZ_US_EAST = timezone('US/EASTERN')
 _WEB_SOCKET_BASE_ADDRESS = 'wss://socket.polygon.io/stocks'
@@ -11,7 +12,7 @@ _URL_BASE = 'https://api.polygon.io/v2'
 _QUERY_PATH_INTRADAY_PRICE  = '/aggs/ticker/{symbol}/range/1/minute/{start_date}/{end_date}?apiKey={apiKey}'
 _API_KEY = os.environ['API_KEY_POLYGON']
 
-_aggregations = ingest.streaming.aggregation.Aggregations()
+_aggregation = us_finance_streaming_data_miner.ingest.streaming.aggregation.Aggregations()
 
 def get_auth_msg():
     return json.dumps({
@@ -20,8 +21,8 @@ def get_auth_msg():
     })
 
 def get_subscribe_msg():
-    symbols = util.symbols.get_symbols_nasdaq()
-    params_value = ','.join(map(lambda s: 'T.' + s, symbols))
+    symbols = us_finance_streaming_data_miner.util.symbols.get_symbols_nasdaq()
+    params_value = ','.join(map(lambda s: 'A.' + s, symbols))
     #params_value = 'T.AAPL,T.GOOG'
 
     return json.dumps({
@@ -46,19 +47,38 @@ async def run():
 def _on_status_message(msg):
     print(f"< (status) {msg}")
 
-def _on_T_message(msg):
+def _t_msg_to_trade(msg):
     keys = ['sym', 'p', 's', 't']
     for key in keys:
         if key not in msg:
-            logging.errror('"{key}" field not present in the message: {msg}'.format(key=key, msg=msg))
+            raise Exception('"{key}" field not present in the message: {msg}'.format(key=key, msg=msg))
+
     symbol = msg['sym']
     price = msg['p']
     volume = msg['s']
     timestamp_milli = int(msg['t'])
     timestamp_second = timestamp_milli // 1000
     print(f"< (T) {msg}")
-    trade = ingest.streaming.aggregation.Trade(timestamp_second, symbol, price, volume)
-    _aggregations.on_trade(trade)
+    trade = us_finance_streaming_data_miner.ingest.streaming.aggregation.Trade(timestamp_second, symbol, price, volume)
+    return trade
+
+def _a_msg_to_trade(msg):
+    keys = ['sym', 'c', 'v', 's']
+    for key in keys:
+        if key not in msg:
+            raise Exception('"{key}" field not present in the message: {msg}'.format(key=key, msg=msg))
+
+    symbol = msg['sym']
+    price = msg['c']
+    volume = msg['v']
+    timestamp_milli = int(msg['s'])
+    timestamp_second = timestamp_milli // 1000
+    trade = us_finance_streaming_data_miner.ingest.streaming.aggregation.Trade(timestamp_second, symbol, price, volume)
+    return trade
+
+def _on_T_message(msg):
+    #print(f"< (T) {msg}")
+    pass
 
 def _on_Q_message(msg):
     print(f"< (Q) {msg}")
@@ -66,8 +86,12 @@ def _on_Q_message(msg):
 def _on_A_message(msg):
     print(f"< (A) {msg}")
 
+    trade = _a_msg_to_trade(msg)
+    _aggregation.on_trade(trade)
+
 def _on_AM_message(msg):
     print(f"< (AM) {msg}")
+
 
 def _on_undefined_message(msg):
     print(f"< (undefined) {msg}")
@@ -99,3 +123,10 @@ def on_messages(msg_strs):
     msgs = json.loads(msg_strs)
     for msg in msgs:
         on_message(msg)
+
+
+
+
+import asyncio
+asyncio.get_event_loop().run_until_complete(run())
+

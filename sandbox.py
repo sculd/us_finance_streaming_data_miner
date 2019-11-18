@@ -1,8 +1,3 @@
-import asyncio
-import websockets
+from us_finance_streaming_data_miner.ingest.streaming.polygon_run import PolygonAggregationsRun
 
-import ingest.streaming.polygon
-
-asyncio.get_event_loop().run_until_complete(ingest.streaming.polygon.run())
-
-
+PolygonAggregationsRun()

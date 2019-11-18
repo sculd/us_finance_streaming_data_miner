@@ -2,3 +2,4 @@ __pycache__/*
 **/__pycache__
 credential.json
 build/*
+data/*
