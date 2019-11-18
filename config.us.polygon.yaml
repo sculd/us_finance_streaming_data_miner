@@ -1,0 +1,7 @@
+schedule:
+    daily_ingestion_start: '20:00:00'
+    daily_last_record_ingestion_start: '15:45:00'
+    intraday_ingestion_start: '15:45:00'
+    timezone: US/EASTERN
+logname: us_finance_data_miner_polygon
+uploadname: us.daily.polygon.csv
