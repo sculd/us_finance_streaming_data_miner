@@ -2,6 +2,7 @@ import json, os
 from pytz import timezone
 import us_finance_streaming_data_miner.ingest.streaming.aggregation
 from us_finance_streaming_data_miner.ingest.streaming.aggregation import AggregationsRun
+from threading import Thread
 import websockets
 from us_finance_streaming_data_miner import util
 import us_finance_streaming_data_miner.util.logging as logging
@@ -46,6 +47,11 @@ async def run(polygon_aggregations_run):
         while True:
             msg = await websocket.recv()
             on_messages(polygon_aggregations_run, msg)
+
+def run_loop(polygon_aggregations_run):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(run(polygon_aggregations_run))
 
 def _on_status_message(polygon_aggregations_run, msg):
     print(f"< (status) {msg}")
@@ -136,5 +142,6 @@ import asyncio
 class PolygonAggregationsRun(AggregationsRun):
     def __init__(self):
         super(PolygonAggregationsRun, self).__init__()
-        asyncio.get_event_loop().run_until_complete(run(self))
+        Thread(target=run_loop, args=(self,)).start()
+
 
