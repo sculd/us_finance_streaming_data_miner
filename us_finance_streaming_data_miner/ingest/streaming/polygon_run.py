@@ -37,11 +37,11 @@ def get_subscribe_msg():
 async def run(polygon_aggregations_run):
     async with websockets.connect(_WEB_SOCKET_BASE_ADDRESS) as websocket:
         greeting = await websocket.recv()
-        print(f"< {greeting}")
+        print("< {greeting}".format(greeting=greeting))
 
         await websocket.send(get_auth_msg())
         msg = await websocket.recv()
-        print(f"< {msg}")
+        print("< {msg}".format(msg=msg))
 
         await websocket.send(get_subscribe_msg())
         while True:
@@ -54,7 +54,7 @@ def run_loop(polygon_aggregations_run):
     loop.run_until_complete(run(polygon_aggregations_run))
 
 def _on_status_message(polygon_aggregations_run, msg):
-    print(f"< (status) {msg}")
+    print("< (status) {msg}".format(msg=msg))
 
 def _t_msg_to_trade(msg):
     keys = ['sym', 'p', 's', 't']
@@ -86,30 +86,29 @@ def _a_msg_to_trade(msg):
 def _on_T_message(polygon_aggregations_run, msg):
     global _cnt_T
     _cnt_T += 1
-    print(f"< (T) {msg}, _cnt_T: {_cnt_T}, _cnt_AM: {_cnt_AM}, _cnt_A: {_cnt_A}")
     trade = _t_msg_to_trade(msg)
     polygon_aggregations_run.on_trade(trade)
 
 def _on_Q_message(polygon_aggregations_run, msg):
-    print(f"< (Q) {msg}")
+    print("< (Q) {msg}".format(msg=msg))
 
 def _on_A_message(polygon_aggregations_run, msg):
     global _cnt_A
     _cnt_A += 1
-    print(f"< (A) {msg}")
+    print("< (A) {msg}".format(msg=msg))
     trade = _a_msg_to_trade(msg)
     polygon_aggregations_run.on_trade(trade)
 
 def _on_AM_message(polygon_aggregations_run, msg):
     global _cnt_AM
     _cnt_AM += 1
-    print(f"< (AM) {msg}")
+    print("< (AM) {msg}".format(msg=msg))
 
 def _on_undefined_message(polygon_aggregations_run, msg):
-    print(f"< (undefined) {msg}")
+    print("< (undefined) {msg}".format(msg=msg))
 
 def on_message(polygon_aggregations_run, msg):
-    print(f"< (undefined) {msg}")
+    print("< (undefined) {msg}".format(msg=msg))
 
     if not msg:
         logging.errror('the message is not valid')
