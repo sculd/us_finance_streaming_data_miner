@@ -35,7 +35,7 @@ def run(forcerun):
             time.sleep(10 * 60)
 
         if forcerun:
-            time.sleep(10)
+            time.sleep(70)
 
         t_ingest_end = config.get_market_ingest_end(cfg)
         while True:

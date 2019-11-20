@@ -163,3 +163,4 @@ class AggregationsRun:
         df_minute.to_csv('{base_dir}/minute.csv'.format(base_dir=base_dir))
         df_daily.to_csv('{base_dir}/daily.csv'.format(base_dir=base_dir))
         self.aggregations.clean()
+
