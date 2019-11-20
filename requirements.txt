@@ -1,7 +1,6 @@
-rauth
-RequestsThrottler
 pytz
 PyYAML
 pandas
 google-cloud-storage
 google-cloud-logging
+websockets

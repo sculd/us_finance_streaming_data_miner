@@ -26,7 +26,7 @@ def get_auth_msg():
 
 def get_subscribe_msg():
     symbols = us_finance_streaming_data_miner.util.symbols.get_symbols_nasdaq()
-    params_value = ','.join(map(lambda s: 'A.' + s, symbols))
+    params_value = ','.join(map(lambda s: 'AM.' + s, symbols))
     #params_value = 'T.AAPL,T.GOOG'
 
     return json.dumps({
