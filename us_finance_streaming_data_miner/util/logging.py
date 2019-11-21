@@ -1,5 +1,6 @@
 from google.cloud import logging
-import config
+
+LOG_NAME = 'us_finance_streaming_data_miner'
 
 _client = None
 
@@ -9,25 +10,25 @@ def _get_client():
         _client = logging.Client()
     return _client
 
-def get_logger(cfg):
-    return _get_client().logger('us_finance_streaming_data_miner')
+def get_logger(log_name=LOG_NAME):
+    return _get_client().logger(log_name)
 
 def _print_with_severity_prefix(severity, text):
     print('{severity}: {text}'.format(severity=severity, text=text))
 
-def _log_print_with_severity(cfg, severity, text):
+def _log_print_with_severity(severity, text):
     _print_with_severity_prefix(severity, text)
-    logger = get_logger(cfg)
+    logger = get_logger()
     logger.log_text(text, severity=severity)
 
-def info(cfg, *messages):
+def info(*messages):
     text = ', '.join(list(map(lambda m: str(m), messages)))
-    _log_print_with_severity(cfg, 'INFO', text)
+    _log_print_with_severity('INFO', text)
 
-def errror(cfg, *messages):
+def errror(*messages):
     text = ', '.join(list(map(lambda m: str(m), messages)))
-    _log_print_with_severity(cfg, 'ERROR', text)
+    _log_print_with_severity('ERROR', text)
 
-def warning(cfg, *messages):
+def warning(*messages):
     text = ', '.join(list(map(lambda m: str(m), messages)))
-    _log_print_with_severity(cfg, 'WARNING', text)
+    _log_print_with_severity('WARNING', text)

@@ -1,6 +1,7 @@
 import pandas as pd
 import datetime, os
 import pytz
+import us_finance_streaming_data_miner.util.logging as logging
 
 from enum import Enum
 
@@ -96,11 +97,13 @@ class Aggregation:
         bar_with_time.bar.on_trade(trade)
 
     def get_minute_df(self):
+        logging.info('Aggregation.get_minute_df for {symbol}, {l} bars'.format(symbol=self.symbol, l=len(self.bar_with_times)))
         tuples = list(map(lambda b: b.to_tuple(), self.bar_with_times))
         return pd.DataFrame(tuples, columns = BarWithTime.get_minute_tuple_names())
 
     def get_daily_df(self):
         df_minute = self.get_minute_df()
+        logging.info('Aggregation.get_daily_df for {symbol}, df_minute length: {l}'.format(symbol=self.symbol, l=len(df_minute )))
         df_daily = pd.DataFrame(columns = BarWithTime.get_daily_tuple_names()).append(
             {
                 'date': df_minute.datetime.dt.date.iloc[0],
@@ -126,6 +129,7 @@ class Aggregations:
         self.aggregation_per_symbol[trade.symbol].on_trade(trade)
 
     def get_minute_df(self):
+        logging.info('Aggregations.get_minute_df for {l_s} symbols'.format(l_s=len(self.aggregation_per_symbol)))
         df = pd.DataFrame(columns=BarWithTime.get_minute_tuple_names())
         for _, aggregation in self.aggregation_per_symbol.items():
             df_ = aggregation.get_minute_df()
@@ -133,6 +137,7 @@ class Aggregations:
         return df.set_index('datetime')
 
     def get_daily_df(self):
+        logging.info('Aggregations.get_daily_df for {l_s} symbols'.format(l_s=len(self.aggregation_per_symbol)))
         df = pd.DataFrame(columns=BarWithTime.get_daily_tuple_names())
         for _, aggregation in self.aggregation_per_symbol.items():
             df_ = aggregation.get_daily_df()
@@ -152,12 +157,21 @@ class AggregationsRun:
             self.aggregations.on_trade(trade)
 
     def on_daily_trade_start(self):
+        logging.info('on_daily_trade_start')
         self.daily_trade_started = True
 
     def on_daily_trade_end(self, base_dir='data'):
+        logging.info('on_daily_trade_end')
         self.daily_trade_started = False
+        t_1 = datetime.datetime.utcnow()
         df_minute = self.aggregations.get_minute_df()
+        t_2 = datetime.datetime.utcnow()
+        dt_21 = t_2 - t_1
+        logging.info('{s} seconds took to get minute_df'.format(s=dt_21.seconds))
         df_daily = self.aggregations.get_daily_df()
+        t_3 = datetime.datetime.utcnow()
+        dt_32 = t_3 - t_2
+        logging.info('{s} seconds took to get daily_df'.format(s=dt_32.seconds))
         if not os.path.exists(base_dir):
             os.mkdir(base_dir)
         df_minute.to_csv('{base_dir}/minute.csv'.format(base_dir=base_dir))
