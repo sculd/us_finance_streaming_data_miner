@@ -25,7 +25,7 @@ def info(*messages):
     text = ', '.join(list(map(lambda m: str(m), messages)))
     _log_print_with_severity('INFO', text)
 
-def errror(*messages):
+def error(*messages):
     text = ', '.join(list(map(lambda m: str(m), messages)))
     _log_print_with_severity('ERROR', text)
 

@@ -10,6 +10,7 @@ import us_finance_streaming_data_miner.util.symbols
 
 _TZ_US_EAST = timezone('US/EASTERN')
 _WEB_SOCKET_BASE_ADDRESS = 'wss://socket.polygon.io/stocks'
+_WEB_SOCKET_MOCK_ADDRESS = 'ws://localhost:8765'
 _URL_BASE = 'https://api.polygon.io/v2'
 _QUERY_PATH_INTRADAY_PRICE  = '/aggs/ticker/{symbol}/range/1/minute/{start_date}/{end_date}?apiKey={apiKey}'
 _API_KEY = os.environ['API_KEY_POLYGON']
@@ -34,8 +35,8 @@ def get_subscribe_msg():
         "params": params_value
     })
 
-async def run(polygon_aggregations_run):
-    async with websockets.connect(_WEB_SOCKET_BASE_ADDRESS) as websocket:
+async def run(polygon_aggregations_run, web_socket_address = _WEB_SOCKET_BASE_ADDRESS):
+    async with websockets.connect(web_socket_address) as websocket:
         greeting = await websocket.recv()
         print("< {greeting}".format(greeting=greeting))
 
@@ -44,6 +45,7 @@ async def run(polygon_aggregations_run):
         print("< {msg}".format(msg=msg))
 
         await websocket.send(get_subscribe_msg())
+        print('subscription request sent')
         while True:
             msg = await websocket.recv()
             on_messages(polygon_aggregations_run, msg)
@@ -53,6 +55,11 @@ def run_loop(polygon_aggregations_run):
     asyncio.set_event_loop(loop)
     loop.run_until_complete(run(polygon_aggregations_run))
 
+def run_mock_loop(polygon_aggregations_run):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(run(polygon_aggregations_run, web_socket_address = _WEB_SOCKET_MOCK_ADDRESS))
+
 def _on_status_message(polygon_aggregations_run, msg):
     print("< (status) {msg}".format(msg=msg))
 
@@ -60,7 +67,7 @@ def _t_msg_to_trade(msg):
     keys = ['sym', 'p', 's', 't']
     for key in keys:
         if key not in msg:
-            logging.errror('"{key}" field not present in the message: {msg}'.format(key=key, msg=msg))
+            print('"{key}" field not present in the message: {msg}'.format(key=key, msg=msg))
     symbol = msg['sym']
     price = msg['p']
     volume = msg['s']
@@ -96,7 +103,6 @@ def _on_A_message(polygon_aggregations_run, msg):
     global _cnt_A
     _cnt_A += 1
     print("< (A) {msg}".format(msg=msg))
-    logging.info("< (A) {msg}".format(msg=msg))
     trade = _a_msg_to_trade(msg)
     polygon_aggregations_run.on_trade(trade)
 
@@ -104,18 +110,19 @@ def _on_AM_message(polygon_aggregations_run, msg):
     global _cnt_AM
     _cnt_AM += 1
     print("< (AM) {msg}".format(msg=msg))
+    logging.info("< (AM) {msg}".format(msg=msg))
 
 def _on_undefined_message(polygon_aggregations_run, msg):
     print("< (undefined) {msg}".format(msg=msg))
 
 def on_message(polygon_aggregations_run, msg):
-    print("< (undefined) {msg}".format(msg=msg))
+    print("< (on message) {msg}".format(msg=msg))
 
     if not msg:
-        logging.errror('the message is not valid')
+        print('the message is not valid')
 
     if 'ev' not in msg:
-        logging.errror('"ev" field not present in the message: {msg}'.format(msg=msg))
+        print('"ev" field not present in the message: {msg}'.format(msg=msg))
     ev = msg['ev']
     if ev == 'status':
         _on_status_message(polygon_aggregations_run, msg)
@@ -132,7 +139,7 @@ def on_message(polygon_aggregations_run, msg):
 
 def on_messages(polygon_aggregations_run, msg_strs):
     if not msg_strs:
-        logging.errror('the message is not valid')
+        print('the message is not valid')
 
     msgs = json.loads(msg_strs)
     for msg in msgs:
@@ -144,4 +151,8 @@ class PolygonAggregationsRun(AggregationsRun):
         super(PolygonAggregationsRun, self).__init__()
         Thread(target=run_loop, args=(self,)).start()
 
+class PolygonAggregationsMockRun(AggregationsRun):
+    def __init__(self):
+        super(PolygonAggregationsMockRun, self).__init__()
+        Thread(target=run_mock_loop, args=(self,)).start()
 
