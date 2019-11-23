@@ -19,7 +19,7 @@ def run():
 
         polygon_run.on_daily_trade_end()
 
-        time.sleep(10)
+        time.sleep(20)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
