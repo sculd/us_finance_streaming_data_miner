@@ -15,7 +15,15 @@ def run(forcerun):
     polygon_run = PolygonAggregationsRun()
 
     while True:
-        dt_str = str(us_finance_streaming_data_miner.util.time.get_utcnow().astimezone(tz).date())
+        dt = us_finance_streaming_data_miner.util.time.get_utcnow().astimezone(tz)
+        dt_str = str(dt.date())
+
+        if dt.weekday() >= 5:
+            logging.info('skipping the routing during weekend, weekday: {weekday} for {dt_str}'.format(
+                weekday=dt.weekday(), dt_str=dt_str))
+            time.sleep(60 * 60)
+            continue
+
 
         logging.info('checking if run for {date_str} should be done'.format(date_str=dt_str))
         if not forcerun and us_finance_streaming_data_miner.history.history.did_run_today(cfg):
