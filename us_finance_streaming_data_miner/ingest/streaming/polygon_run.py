@@ -102,7 +102,6 @@ def _on_Q_message(polygon_aggregations_run, msg):
 def _on_A_message(polygon_aggregations_run, msg):
     global _cnt_A
     _cnt_A += 1
-    print("< (A) {msg}".format(msg=msg))
     logging.info("< (A) {msg}".format(msg=msg))
     trade = _a_msg_to_trade(msg)
     polygon_aggregations_run.on_trade(trade)
@@ -110,7 +109,6 @@ def _on_A_message(polygon_aggregations_run, msg):
 def _on_AM_message(polygon_aggregations_run, msg):
     global _cnt_AM
     _cnt_AM += 1
-    print("< (AM) {msg}".format(msg=msg))
     logging.info("< (AM) {msg}".format(msg=msg))
 
 def _on_undefined_message(polygon_aggregations_run, msg):
