@@ -61,7 +61,7 @@ def run_mock_loop(polygon_aggregations_run):
     loop.run_until_complete(run(polygon_aggregations_run, web_socket_address = _WEB_SOCKET_MOCK_ADDRESS))
 
 def _on_status_message(polygon_aggregations_run, msg):
-    print("< (status) {msg}".format(msg=msg))
+    logging.info("< (status) {msg}".format(msg=msg))
 
 def _t_msg_to_trade(msg):
     keys = ['sym', 'p', 's', 't']
@@ -115,8 +115,6 @@ def _on_undefined_message(polygon_aggregations_run, msg):
     print("< (undefined) {msg}".format(msg=msg))
 
 def on_message(polygon_aggregations_run, msg):
-    print("< (on message) {msg}".format(msg=msg))
-
     if not msg:
         print('the message is not valid')
 
