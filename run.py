@@ -49,6 +49,7 @@ def run(forcerun):
         while True:
             t_cur = us_finance_streaming_data_miner.util.time.get_utcnow().astimezone(tz).time()
             logging.info(cfg, 'checking if the schedule time for {dt_str} has reached'.format(dt_str=dt_str))
+            logging.info(polygon_run.get_status_string())
             if forcerun or t_cur > t_ingest_end:
                 polygon_run.on_daily_trade_end()
                 us_finance_streaming_data_miner.history.history.on_run(cfg)

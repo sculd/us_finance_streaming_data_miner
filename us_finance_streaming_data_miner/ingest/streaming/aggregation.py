@@ -1,4 +1,4 @@
-import pandas as pd
+import pandas as pd, numpy as np
 import datetime, os
 import pytz
 import us_finance_streaming_data_miner.util.logging as logging
@@ -144,6 +144,13 @@ class Aggregations:
             df = df.append(df_)
         return df.set_index('date')
 
+    def get_status_string(self):
+        bars_avg = np.mean(list(map(lambda ag: len(ag.bar_with_times), self.aggregation_per_symbol.values())))
+        return 'size of aggregation_per_symbol: {l}, bars_avg: {bars_avg}'.format(
+            l = len(self.aggregation_per_symbol),
+            bars_avg = bars_avg
+        )
+
 class AggregationsRun:
     def __init__(self):
         self.aggregations = Aggregations()
@@ -178,3 +185,5 @@ class AggregationsRun:
         df_daily.to_csv('{base_dir}/daily.csv'.format(base_dir=base_dir))
         self.aggregations.clean()
 
+    def get_status_string(self):
+        return self.aggregations.get_status_string()
