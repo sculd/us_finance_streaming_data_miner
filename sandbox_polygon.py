@@ -45,7 +45,7 @@ async def run():
             on_messages(msg)
 
 def _on_status_message(msg):
-    print(f"< (status) {msg}")
+    logging.info(f"< (status) {msg}")
 
 def _t_msg_to_trade(msg):
     keys = ['sym', 'p', 's', 't']
