@@ -61,7 +61,7 @@ def run_mock_loop(polygon_aggregations_run):
     loop.run_until_complete(run(polygon_aggregations_run, web_socket_address = _WEB_SOCKET_MOCK_ADDRESS))
 
 def _on_status_message(polygon_aggregations_run, msg):
-    logging.info("< (status) {msg}".format(msg=msg))
+    print("< (status) {msg}".format(msg=msg))
 
 def _t_msg_to_trade(msg):
     keys = ['sym', 'p', 's', 't']
@@ -102,24 +102,24 @@ def _on_Q_message(polygon_aggregations_run, msg):
 def _on_A_message(polygon_aggregations_run, msg):
     global _cnt_A
     _cnt_A += 1
-    logging.info("< (A) {msg}".format(msg=msg))
+    print("< (A) {msg}".format(msg=msg))
     trade = _a_msg_to_trade(msg)
     polygon_aggregations_run.on_trade(trade)
 
 def _on_AM_message(polygon_aggregations_run, msg):
     global _cnt_AM
     _cnt_AM += 1
-    logging.info("< (AM) {msg}".format(msg=msg))
+    print("< (AM) {msg}".format(msg=msg))
 
 def _on_undefined_message(polygon_aggregations_run, msg):
     print("< (undefined) {msg}".format(msg=msg))
 
 def on_message(polygon_aggregations_run, msg):
     if not msg:
-        print('the message is not valid')
+        logging.error('the message is not valid')
 
     if 'ev' not in msg:
-        print('"ev" field not present in the message: {msg}'.format(msg=msg))
+        logging.error('"ev" field not present in the message: {msg}'.format(msg=msg))
     ev = msg['ev']
     if ev == 'status':
         _on_status_message(polygon_aggregations_run, msg)
@@ -136,7 +136,7 @@ def on_message(polygon_aggregations_run, msg):
 
 def on_messages(polygon_aggregations_run, msg_strs):
     if not msg_strs:
-        print('the message is not valid')
+        logging.error('the message is not valid')
 
     msgs = json.loads(msg_strs)
     for msg in msgs:

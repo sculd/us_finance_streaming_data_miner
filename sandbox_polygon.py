@@ -45,7 +45,7 @@ async def run():
             on_messages(msg)
 
 def _on_status_message(msg):
-    logging.info(f"< (status) {msg}")
+    print(f"< (status) {msg}")
 
 def _t_msg_to_trade(msg):
     keys = ['sym', 'p', 's', 't']
@@ -98,10 +98,10 @@ def _on_undefined_message(msg):
 
 def on_message(msg):
     if not msg:
-        logging.errror('the message is not valid')
+        logging.error('the message is not valid')
 
     if 'ev' not in msg:
-        logging.errror('"ev" field not present in the message: {msg}'.format(msg=msg))
+        logging.error('"ev" field not present in the message: {msg}'.format(msg=msg))
     ev = msg['ev']
     if ev == 'status':
         _on_status_message(msg)
@@ -118,7 +118,7 @@ def on_message(msg):
 
 def on_messages(msg_strs):
     if not msg_strs:
-        logging.errror('the message is not valid')
+        logging.error('the message is not valid')
 
     msgs = json.loads(msg_strs)
     for msg in msgs:

@@ -157,11 +157,11 @@ class AggregationsRun:
             self.aggregations.on_trade(trade)
 
     def on_daily_trade_start(self):
-        print('on_daily_trade_start')
+        logging.info('on_daily_trade_start')
         self.daily_trade_started = True
 
     def on_daily_trade_end(self, base_dir='data'):
-        print('on_daily_trade_end')
+        logging.info('on_daily_trade_end')
         self.daily_trade_started = False
         t_1 = datetime.datetime.utcnow()
         df_minute = self.aggregations.get_minute_df()
