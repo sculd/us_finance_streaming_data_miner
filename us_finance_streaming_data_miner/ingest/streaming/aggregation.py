@@ -129,7 +129,7 @@ class Aggregations:
         self.aggregation_per_symbol[trade.symbol].on_trade(trade)
 
     def get_minute_df(self):
-        print('Aggregations.get_minute_df for {l_s} symbols'.format(l_s=len(self.aggregation_per_symbol)))
+        logging.info('Aggregations.get_minute_df for {l_s} symbols'.format(l_s=len(self.aggregation_per_symbol)))
         df = pd.DataFrame(columns=BarWithTime.get_minute_tuple_names())
         for _, aggregation in self.aggregation_per_symbol.items():
             df_ = aggregation.get_minute_df()
@@ -137,7 +137,7 @@ class Aggregations:
         return df.set_index('datetime')
 
     def get_daily_df(self):
-        print('Aggregations.get_daily_df for {l_s} symbols'.format(l_s=len(self.aggregation_per_symbol)))
+        logging.info('Aggregations.get_daily_df for {l_s} symbols'.format(l_s=len(self.aggregation_per_symbol)))
         df = pd.DataFrame(columns=BarWithTime.get_daily_tuple_names())
         for _, aggregation in self.aggregation_per_symbol.items():
             df_ = aggregation.get_daily_df()
@@ -174,11 +174,11 @@ class AggregationsRun:
         df_minute = self.aggregations.get_minute_df()
         t_2 = datetime.datetime.utcnow()
         dt_21 = t_2 - t_1
-        print('{s} seconds took to get minute_df'.format(s=dt_21.seconds))
+        logging.info('{s} seconds took to get minute_df'.format(s=dt_21.seconds))
         df_daily = self.aggregations.get_daily_df()
         t_3 = datetime.datetime.utcnow()
         dt_32 = t_3 - t_2
-        print('{s} seconds took to get daily_df'.format(s=dt_32.seconds))
+        logging.info('{s} seconds took to get daily_df'.format(s=dt_32.seconds))
         if not os.path.exists(base_dir):
             os.mkdir(base_dir)
         df_minute.to_csv('{base_dir}/minute.csv'.format(base_dir=base_dir))
