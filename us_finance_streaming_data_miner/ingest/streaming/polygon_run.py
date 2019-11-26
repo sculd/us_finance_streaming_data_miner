@@ -47,8 +47,11 @@ async def run(polygon_aggregations_run, web_socket_address = _WEB_SOCKET_BASE_AD
         await websocket.send(get_subscribe_msg())
         print('subscription request sent')
         while True:
-            msg = await websocket.recv()
-            on_messages(polygon_aggregations_run, msg)
+            try:
+                msg = await websocket.recv()
+                on_messages(polygon_aggregations_run, msg)
+            except asyncio.futures.InvalidStateError as e:
+                logging.error(str(e))
 
 def run_loop(polygon_aggregations_run):
     loop = asyncio.new_event_loop()
