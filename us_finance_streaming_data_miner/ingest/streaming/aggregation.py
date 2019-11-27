@@ -131,17 +131,36 @@ class Aggregations:
     def get_minute_df(self):
         logging.info('Aggregations.get_minute_df for {l_s} symbols'.format(l_s=len(self.aggregation_per_symbol)))
         df = pd.DataFrame(columns=BarWithTime.get_minute_tuple_names())
-        for _, aggregation in self.aggregation_per_symbol.items():
+        for symbol, aggregation in self.aggregation_per_symbol.items():
+            t_1 = datetime.datetime.utcnow()
             df_ = aggregation.get_minute_df()
+            t_2 = datetime.datetime.utcnow()
+            dt_21 = t_2 - t_1
+            logging.info('{s} seconds {ms} microseconds took to get minute_df for symbol {symbol}'.format(
+                s=dt_21.seconds, ms=dt_21.microseconds, symbol=symbol))
             df = df.append(df_)
+            t_3 = datetime.datetime.utcnow()
+            dt_32 = t_3 - t_2
+            logging.info('{s} seconds {ms} microseconds took to append for symbol {symbol}'.format(
+                s=dt_32.seconds, ms=dt_32.microseconds, symbol=symbol))
         return df.set_index('datetime')
 
     def get_daily_df(self):
         logging.info('Aggregations.get_daily_df for {l_s} symbols'.format(l_s=len(self.aggregation_per_symbol)))
         df = pd.DataFrame(columns=BarWithTime.get_daily_tuple_names())
-        for _, aggregation in self.aggregation_per_symbol.items():
+        for symbol, aggregation in self.aggregation_per_symbol.items():
+            t_1 = datetime.datetime.utcnow()
             df_ = aggregation.get_daily_df()
+            t_2 = datetime.datetime.utcnow()
+            dt_21 = t_2 - t_1
+            logging.info('{s} seconds {ms} microseconds took to get minute_df for symbol {symbol}'.format(
+                s=dt_21.seconds, ms=dt_21.microseconds, symbol=symbol))
             df = df.append(df_)
+            t_3 = datetime.datetime.utcnow()
+            dt_32 = t_3 - t_2
+            logging.info('{s} seconds {ms} microseconds took to append for symbol {symbol}'.format(
+                s=dt_32.seconds, ms=dt_32.microseconds, symbol=symbol))
+
         return df.set_index('date')
 
     def get_status_string(self):
