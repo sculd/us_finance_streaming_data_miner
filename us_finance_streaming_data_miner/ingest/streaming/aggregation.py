@@ -214,6 +214,19 @@ class AggregationsRun:
         logging.info('on_daily_trade_start')
         self.daily_trade_started = True
 
+    def save_daily_df(self, base_dir='data'):
+        logging.info('upload_daily_df')
+        self.daily_trade_started = False
+        t_1 = datetime.datetime.utcnow()
+        df_daily = self.aggregations.get_daily_df()
+        t_2 = datetime.datetime.utcnow()
+        dt_21 = t_2 - t_1
+        logging.info('[save_daily_df] {s} seconds took to get daily_df'.format(s=dt_21.seconds))
+        if not os.path.exists(base_dir):
+            os.mkdir(base_dir)
+        df_daily.to_csv('{base_dir}/daily.csv'.format(base_dir=base_dir))
+        return df_daily
+
     def on_daily_trade_end(self, base_dir='data'):
         logging.info('on_daily_trade_end')
         self.daily_trade_started = False

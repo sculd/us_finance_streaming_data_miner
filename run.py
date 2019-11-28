@@ -7,6 +7,7 @@ import us_finance_streaming_data_miner.util.time
 import config
 import us_finance_streaming_data_miner.util.logging as logging
 from us_finance_streaming_data_miner.ingest.streaming.polygon_run import PolygonAggregationsRun
+import us_finance_streaming_data_miner.upload.daily as daily_upload
 
 
 def run(forcerun):
@@ -51,6 +52,9 @@ def run(forcerun):
             logging.info(cfg, 'checking if the schedule time for {dt_str} has reached'.format(dt_str=dt_str))
             logging.info(polygon_run.get_status_string())
             if forcerun or t_cur > t_ingest_end:
+                polygon_run.save_daily_df()
+                daily_upload.upload()
+
                 polygon_run.on_daily_trade_end()
                 us_finance_streaming_data_miner.history.history.on_run(cfg)
                 break
