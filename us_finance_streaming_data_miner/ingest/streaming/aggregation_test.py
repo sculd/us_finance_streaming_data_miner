@@ -102,6 +102,33 @@ class TestAggregation(unittest.TestCase):
         self.assertEqual(130, row_1.close)
         self.assertEqual(1, row_1.volume)
 
+    def test_minute_df_with_range_minutes(self):
+        one_minute_seconds = 60
+        symbol = 'DUMMY_SYMBOL'
+        aggregation = Aggregation(symbol)
+        aggregation.set_now_tz(pytz.utc.localize(datetime.datetime.utcfromtimestamp(one_minute_seconds * 2)))
+        aggregation.bar_with_times.append(BarWithTime(BarWithTime.truncate_to_minute(0), Bar(symbol, 100, 110, 90, 100, 1)))
+        aggregation.bar_with_times.append(BarWithTime(BarWithTime.truncate_to_minute(one_minute_seconds), Bar(symbol, 110, 120, 100, 110, 2)))
+        aggregation.bar_with_times.append(BarWithTime(BarWithTime.truncate_to_minute(one_minute_seconds * 2), Bar(symbol, 120, 130, 110, 120, 3)))
+
+        df_2m = aggregation.get_minute_df(range_minutes=2)
+        self.assertEqual(2, len(df_2m))
+        row_0_2m = df_2m.iloc[0]
+        self.assertEqual(110, row_0_2m.open)
+        self.assertEqual(120, row_0_2m.high)
+        self.assertEqual(100, row_0_2m.low)
+        self.assertEqual(110, row_0_2m.close)
+        self.assertEqual(2, row_0_2m.volume)
+        row_1_2m = df_2m.iloc[1]
+        self.assertEqual(120, row_1_2m.open)
+        self.assertEqual(130, row_1_2m.high)
+        self.assertEqual(110, row_1_2m.low)
+        self.assertEqual(120, row_1_2m.close)
+        self.assertEqual(3, row_1_2m.volume)
+
+        df_4m = aggregation.get_minute_df(range_minutes=4)
+        self.assertEqual(3, len(df_4m))
+
     def test_daily_df(self):
         one_minute_seconds = 60
         symbol = 'DUMMY_SYMBOL'

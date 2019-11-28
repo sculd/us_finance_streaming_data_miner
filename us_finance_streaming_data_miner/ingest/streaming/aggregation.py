@@ -44,6 +44,11 @@ class BarWithTime:
         return t_tz_minute
 
     def __init__(self, time, bar):
+        '''
+
+        :param time: datetime instance in utc timezone
+        :param bar:
+        '''
         self.time = time
         self.bar = bar
 
@@ -65,6 +70,16 @@ class Aggregation:
     def __init__(self, symbol):
         self.symbol = symbol
         self.bar_with_times = []
+        self.t_now_tz = None
+
+    def set_now_tz(self, now_tz):
+        self.t_now_tz = now_tz
+
+    def _get_t_now_tz(self):
+        if self.t_now_tz:
+            return self.t_now_tz
+        t_now = datetime.datetime.utcnow()
+        return pytz.utc.localize(t_now)
 
     def _on_first_trade(self, trade):
         assert self.symbol == trade.symbol
@@ -96,9 +111,22 @@ class Aggregation:
         assert bar_with_time.time == trade_t
         bar_with_time.bar.on_trade(trade)
 
-    def get_minute_df(self):
-        print('Aggregation.get_minute_df for {symbol}, {l} bars'.format(symbol=self.symbol, l=len(self.bar_with_times)))
+    def get_minute_df(self, range_minutes = None):
+        print('Aggregation.get_minute_df for {symbol}, {l} total bars, range_minutes: {range_minutes}'.format(
+            symbol=self.symbol, l=len(self.bar_with_times), range_minutes=range_minutes if range_minutes else 'all'))
         tuples = list(map(lambda b: b.to_tuple(), self.bar_with_times))
+        if range_minutes:
+            t_now_tz = self._get_t_now_tz()
+            i = len(tuples)
+            while True:
+                if i == 0:
+                    break
+                else:
+                    dt = t_now_tz - tuples[i - 1][0]
+                    if dt.seconds / 60 >= range_minutes:
+                        break
+                i -= 1
+            tuples = tuples[i:]
         return pd.DataFrame(tuples, columns = BarWithTime.get_minute_tuple_names())
 
     def get_daily_df(self):
