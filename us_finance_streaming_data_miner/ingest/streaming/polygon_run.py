@@ -45,7 +45,7 @@ def run_loop(polygon_aggregations_run):
     )
 
     def callback(message):
-        msg = json.loads(message.data)
+        msg = json.loads(message.data.decode('utf-8'))
         on_message(polygon_aggregations_run, msg)
         message.ack()
 
