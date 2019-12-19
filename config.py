@@ -43,4 +43,3 @@ def get_market_ingest_end(cfg):
     '''
     t = datetime.datetime.strptime(cfg['market']['ingest_end'], '%H:%M:%S')
     return datetime.time(t.hour, t.minute, t.second, tzinfo=get_tz(cfg))
-

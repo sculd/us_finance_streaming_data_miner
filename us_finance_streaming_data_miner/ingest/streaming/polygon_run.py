@@ -1,4 +1,5 @@
 import json, os
+from google.cloud import pubsub_v1
 from pytz import timezone
 import us_finance_streaming_data_miner.ingest.streaming.aggregation
 from us_finance_streaming_data_miner.ingest.streaming.aggregation import AggregationsRun
@@ -12,7 +13,6 @@ _TZ_US_EAST = timezone('US/EASTERN')
 _WEB_SOCKET_BASE_ADDRESS = 'wss://socket.polygon.io/stocks'
 _WEB_SOCKET_MOCK_ADDRESS = 'ws://localhost:8765'
 _URL_BASE = 'https://api.polygon.io/v2'
-_QUERY_PATH_INTRADAY_PRICE  = '/aggs/ticker/{symbol}/range/1/minute/{start_date}/{end_date}?apiKey={apiKey}'
 _API_KEY = os.environ['API_KEY_POLYGON']
 
 _cnt_T = 0
@@ -35,33 +35,33 @@ def get_subscribe_msg():
         "params": params_value
     })
 
-async def run(polygon_aggregations_run, web_socket_address = _WEB_SOCKET_BASE_ADDRESS):
-    async with websockets.connect(web_socket_address) as websocket:
-        greeting = await websocket.recv()
-        print("< {greeting}".format(greeting=greeting))
-
-        await websocket.send(get_auth_msg())
-        msg = await websocket.recv()
-        print("< {msg}".format(msg=msg))
-
-        await websocket.send(get_subscribe_msg())
-        print('subscription request sent')
-        while True:
-            try:
-                msg = await websocket.recv()
-                on_messages(polygon_aggregations_run, msg)
-            except asyncio.futures.InvalidStateError as e:
-                logging.error(str(e))
-
 def run_loop(polygon_aggregations_run):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(run(polygon_aggregations_run))
+    project_id = os.getenv('GOOGLE_CLOUD_PROJECT')
+    subscription_id = os.getenv('FINANCE_STREAM_PUBSUB_SUBSCRIPTION_ID')
+
+    subscriber = pubsub_v1.SubscriberClient()
+    subscription_path = subscriber.subscription_path(
+        project_id, subscription_id
+    )
+
+    def callback(message):
+        msg = json.loads(message.data)
+        on_message(polygon_aggregations_run, msg)
+        message.ack()
+
+    streaming_pull_future = subscriber.subscribe(
+        subscription_path, callback=callback
+    )
+    print("Listening for messages on {}\n".format(subscription_path))
+
+    try:
+        streaming_pull_future.result()
+    except Exception as ex:  # noqa
+        print(ex)
+        streaming_pull_future.cancel()
 
 def run_mock_loop(polygon_aggregations_run):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(run(polygon_aggregations_run, web_socket_address = _WEB_SOCKET_MOCK_ADDRESS))
+    pass
 
 def _on_status_message(polygon_aggregations_run, msg):
     print("< (status) {msg}".format(msg=msg))
@@ -137,15 +137,6 @@ def on_message(polygon_aggregations_run, msg):
     else:
         _on_undefined_message(polygon_aggregations_run, msg)
 
-def on_messages(polygon_aggregations_run, msg_strs):
-    if not msg_strs:
-        logging.error('the message is not valid')
-
-    msgs = json.loads(msg_strs)
-    for msg in msgs:
-        on_message(polygon_aggregations_run, msg)
-
-import asyncio
 class PolygonAggregationsRun(AggregationsRun):
     def __init__(self):
         super(PolygonAggregationsRun, self).__init__()
@@ -155,4 +146,3 @@ class PolygonAggregationsMockRun(AggregationsRun):
     def __init__(self):
         super(PolygonAggregationsMockRun, self).__init__()
         Thread(target=run_mock_loop, args=(self,)).start()
-
