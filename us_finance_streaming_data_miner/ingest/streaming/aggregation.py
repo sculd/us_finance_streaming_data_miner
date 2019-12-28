@@ -156,8 +156,9 @@ class Aggregations:
             self.aggregation_per_symbol[trade.symbol] = Aggregation(trade.symbol)
         self.aggregation_per_symbol[trade.symbol].on_trade(trade)
 
-    def get_minute_df(self):
-        logging.info('Aggregations.get_minute_df for {l_s} symbols'.format(l_s=len(self.aggregation_per_symbol)))
+    def get_minute_df(self, print_log = True):
+        if print_log:
+            logging.info('Aggregations.get_minute_df for {l_s} symbols'.format(l_s=len(self.aggregation_per_symbol)))
         df = pd.DataFrame(columns=BarWithTime.get_minute_tuple_names())
         for symbol, aggregation in self.aggregation_per_symbol.items():
             t_1 = datetime.datetime.utcnow()
