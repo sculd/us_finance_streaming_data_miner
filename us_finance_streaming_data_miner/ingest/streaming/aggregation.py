@@ -111,9 +111,10 @@ class Aggregation:
         assert bar_with_time.time == trade_t
         bar_with_time.bar.on_trade(trade)
 
-    def get_minute_df(self, range_minutes = None):
-        print('Aggregation.get_minute_df for {symbol}, {l} total bars, range_minutes: {range_minutes}'.format(
-            symbol=self.symbol, l=len(self.bar_with_times), range_minutes=range_minutes if range_minutes else 'all'))
+    def get_minute_df(self, range_minutes = None, print_log = True):
+        if print_log:
+            print('Aggregation.get_minute_df for {symbol}, {l} total bars, range_minutes: {range_minutes}'.format(
+                symbol=self.symbol, l=len(self.bar_with_times), range_minutes=range_minutes if range_minutes else 'all'))
         tuples = list(map(lambda b: b.to_tuple(), self.bar_with_times))
         if range_minutes:
             t_now_tz = self._get_t_now_tz()
