@@ -46,8 +46,8 @@ def run_loop(polygon_aggregations_run):
 
     def callback(message):
         msg = json.loads(message.data.decode('utf-8'))
-        on_message(polygon_aggregations_run, msg)
         message.ack()
+        on_message(polygon_aggregations_run, msg)
 
     streaming_pull_future = subscriber.subscribe(
         subscription_path, callback=callback
@@ -57,7 +57,7 @@ def run_loop(polygon_aggregations_run):
     try:
         streaming_pull_future.result()
     except Exception as ex:  # noqa
-        print(ex)
+        logging.error(ex)
         streaming_pull_future.cancel()
 
 def run_mock_loop(polygon_aggregations_run):
@@ -116,6 +116,7 @@ def _on_AM_message(polygon_aggregations_run, msg):
 
 def _on_undefined_message(polygon_aggregations_run, msg):
     print("< (undefined) {msg}".format(msg=msg))
+    logging.error("< (undefined) {msg}".format(msg=msg))
 
 def on_message(polygon_aggregations_run, msg):
     if not msg:
