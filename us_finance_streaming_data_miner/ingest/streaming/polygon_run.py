@@ -47,7 +47,7 @@ def run_loop(polygon_aggregations_run):
     def callback(message):
         msg_str = json.loads(message.data.decode('utf-8'))
         message.ack()
-        on_message(polygon_aggregations_run, json.loads(msg_str))
+        on_message(polygon_aggregations_run, json.loads(msg_str)[0])
 
     streaming_pull_future = subscriber.subscribe(
         subscription_path, callback=callback
