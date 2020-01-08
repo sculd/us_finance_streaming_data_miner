@@ -105,7 +105,8 @@ def _on_Q_message(polygon_aggregations_run, msg):
 def _on_A_message(polygon_aggregations_run, msg):
     global _cnt_A
     _cnt_A += 1
-    print("< (A) {msg}".format(msg=msg))
+    if _cnt_A % 100 == 0:
+        print("< (A) {msg}".format(msg=msg))
     trade = _a_msg_to_trade(msg)
     polygon_aggregations_run.on_trade(trade)
 
