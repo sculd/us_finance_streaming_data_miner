@@ -13,7 +13,7 @@ import us_finance_streaming_data_miner.upload.daily as daily_upload
 def run(forcerun):
     cfg = config.load('config.us.yaml')
     tz = config.get_tz(cfg)
-    polygon_run = PolygonAggregationsRun()
+    polygon_run = PolygonAggregationsRun(subscription_id = os.getenv('FINANCE_STREAM_PUBSUB_SUBSCRIPTION_ID'))
 
     while True:
         dt = us_finance_streaming_data_miner.util.time.get_utcnow().astimezone(tz)

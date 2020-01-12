@@ -11,9 +11,8 @@ _cnt_T = 0
 _cnt_A = 0
 _cnt_MA = 0
 
-def run_loop(polygon_aggregations_run):
+def run_loop(polygon_aggregations_run, subscription_id):
     project_id = os.getenv('GOOGLE_CLOUD_PROJECT')
-    subscription_id = os.getenv('FINANCE_STREAM_PUBSUB_SUBSCRIPTION_ID')
 
     subscriber = pubsub_v1.SubscriberClient()
     subscription_path = subscriber.subscription_path(
@@ -121,7 +120,7 @@ class PolygonAggregationsMockRun(AggregationsRun):
         Thread(target=run_mock_loop, args=(self,)).start()
 
 class PolygonAggregationsRun(AggregationsRun):
-    def __init__(self, aggregations = None):
+    def __init__(self, aggregations = None, subscription_id = None):
         super(PolygonAggregationsRun, self).__init__()
         self.aggregations = aggregations if aggregations else Aggregations()
-        Thread(target=run_loop, args=(self,)).start()
+        Thread(target=run_loop, args=(self, subscription_id,)).start()
