@@ -2,38 +2,14 @@ import json, os
 from google.cloud import pubsub_v1
 from pytz import timezone
 import us_finance_streaming_data_miner.ingest.streaming.aggregation
-from us_finance_streaming_data_miner.ingest.streaming.aggregation import AggregationsRun
+from us_finance_streaming_data_miner.ingest.streaming.aggregation import AggregationsRun, Aggregations
 from threading import Thread
-import websockets
-from us_finance_streaming_data_miner import util
 import us_finance_streaming_data_miner.util.logging as logging
 import us_finance_streaming_data_miner.util.symbols
-
-_TZ_US_EAST = timezone('US/EASTERN')
-_WEB_SOCKET_BASE_ADDRESS = 'wss://socket.polygon.io/stocks'
-_WEB_SOCKET_MOCK_ADDRESS = 'ws://localhost:8765'
-_URL_BASE = 'https://api.polygon.io/v2'
-_API_KEY = os.environ['API_KEY_POLYGON']
 
 _cnt_T = 0
 _cnt_A = 0
 _cnt_MA = 0
-
-def get_auth_msg():
-    return json.dumps({
-        "action":"auth",
-        "params": _API_KEY
-    })
-
-def get_subscribe_msg():
-    symbols = us_finance_streaming_data_miner.util.symbols.get_symbols_nasdaq()
-    params_value = ','.join(map(lambda s: 'A.' + s, symbols))
-    #params_value = 'T.AAPL,T.GOOG'
-
-    return json.dumps({
-        "action":"subscribe",
-        "params": params_value
-    })
 
 def run_loop(polygon_aggregations_run):
     project_id = os.getenv('GOOGLE_CLOUD_PROJECT')
@@ -139,12 +115,13 @@ def on_message(polygon_aggregations_run, msg):
     else:
         _on_undefined_message(polygon_aggregations_run, msg)
 
-class PolygonAggregationsRun(AggregationsRun):
-    def __init__(self):
-        super(PolygonAggregationsRun, self).__init__()
-        Thread(target=run_loop, args=(self,)).start()
-
 class PolygonAggregationsMockRun(AggregationsRun):
     def __init__(self):
         super(PolygonAggregationsMockRun, self).__init__()
         Thread(target=run_mock_loop, args=(self,)).start()
+
+class PolygonAggregationsRun(AggregationsRun):
+    def __init__(self, aggregations = None):
+        super(PolygonAggregationsRun, self).__init__()
+        self.aggregations = aggregations if aggregations else Aggregations()
+        Thread(target=run_loop, args=(self,)).start()
