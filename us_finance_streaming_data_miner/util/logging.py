@@ -21,6 +21,10 @@ def _log_print_with_severity(severity, text):
     logger = get_logger()
     logger.log_text(text, severity=severity)
 
+def debug(*messages):
+    text = ', '.join(list(map(lambda m: str(m), messages)))
+    _log_print_with_severity('DEBUG', text)
+
 def info(*messages):
     text = ', '.join(list(map(lambda m: str(m), messages)))
     _log_print_with_severity('INFO', text)

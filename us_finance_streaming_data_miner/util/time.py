@@ -51,3 +51,9 @@ def time_diff_seconds(t1, t2):
     dt1, dt2 = datetime.datetime.combine(today, t1), datetime.datetime.combine(today, t2)
     tf = dt1 - dt2
     return tf.days * 24 * 3600 + tf.seconds
+
+def truncate_utc_timestamp_to_minute(timestamp_seconds):
+    t = datetime.datetime.utcfromtimestamp(timestamp_seconds)
+    t_tz = pytz.utc.localize(t)
+    t_tz_minute = t_tz.replace(second=0, microsecond=0)
+    return t_tz_minute
