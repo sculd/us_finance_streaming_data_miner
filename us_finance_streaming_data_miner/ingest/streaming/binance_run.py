@@ -71,6 +71,8 @@ def _on_kline_message(aggregations_run, msg, shard_id, shard_size):
     bar_with_time = _binance_kline_msg_to_on_bar_with_time(k, shard_id, shard_size)
     if bar_with_time:
         aggregations_run.on_bar_with_time(bar_with_time)
+    else:
+        pass # print('does not correspond to this shard')
 
 def _on_undefined_message(aggregations_run, msg):
     print("< (undefined) {msg}".format(msg=msg))

@@ -122,9 +122,14 @@ class Aggregation:
             self._on_first_bar_with_time(new_bar_with_time)
 
         bar_t = new_bar_with_time.time
+        cnt = 0
         while True:
+            cnt += 1
+            if cnt > 100:
+                print('breaking after more than {cnt} loops'.format(cnt=cnt))
+                break
             bar_with_time = self.bar_with_times[-1]
-            if bar_with_time.time == bar_t:
+            if bar_with_time.time >= bar_t:
                 break
 
             time = bar_with_time.get_next_bar_time()
@@ -132,6 +137,9 @@ class Aggregation:
             if time == bar_t:
                 price = bar_with_time.bar.open
             self._new_bar_with_zero_volume(time, price)
+
+        if len(self.bar_with_times) == 0:
+            print('bar_with_times has no elements')
 
         inserted_bar = self.bar_with_times[-1].bar
         inserted_bar.open = new_bar_with_time.bar.open
