@@ -32,6 +32,10 @@ class TradeSignal(Aggregation):
         super(TradeSignal, self).on_trade(trade)
         self.on_ingest()
 
+    def on_bar_with_time(self, bar_with_time):
+        super(TradeSignal, self).on_bar_with_time(bar_with_time)
+        self.on_ingest()
+
     def on_ingest(self):
         if self._is_trade_on_new_minute():
             trading_signal_mode = self.get_is_trading_signal()
