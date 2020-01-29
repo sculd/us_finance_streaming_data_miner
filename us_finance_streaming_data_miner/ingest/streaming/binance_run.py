@@ -44,7 +44,7 @@ def _binance_kline_msg_to_on_bar_with_time(msg, shard_id, shard_size):
 
     symbol = msg['s']
 
-    hashed_v = int(hashlib.sha1(symbol).hash())
+    hashed_v = int(hashlib.sha256(symbol.encode('utf-8')).hexdigest(), 16)
     hashed_id = hashed_v % shard_size
     if hashed_id != shard_id:
         return None
