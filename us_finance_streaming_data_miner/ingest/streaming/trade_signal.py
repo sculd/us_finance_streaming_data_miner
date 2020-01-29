@@ -30,7 +30,9 @@ class TradeSignal(Aggregation):
 
     def on_trade(self, trade):
         super(TradeSignal, self).on_trade(trade)
+        self.on_ingest()
 
+    def on_ingest(self):
         if self._is_trade_on_new_minute():
             trading_signal_mode = self.get_is_trading_signal()
             if trading_signal_mode is TRADE_SIGNAL_MODE.LONG_SIGNAL:
@@ -114,6 +116,11 @@ class TradeSignals(Aggregations):
                 self.on_new_minute()
                 self.last_tick_epoch_second = self.current_time.get_current_epoch_seconds()
             time.sleep(self.tick_minute_sleep_duration_seconds)
+
+    def on_bar_with_time(self, bar_with_time):
+        if bar_with_time.bar.symbol not in self.aggregation_per_symbol:
+            self.aggregation_per_symbol[bar_with_time.bar.symbol] = TradeSignal(self.positionsize, bar_with_time.bar.symbol)
+        super(TradeSignals, self).on_bar_with_time(bar_with_time)
 
     def on_trade(self, trade):
         if trade.symbol not in self.aggregation_per_symbol:
