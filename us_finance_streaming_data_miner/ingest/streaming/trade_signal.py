@@ -66,12 +66,15 @@ class TradeSignal(Aggregation):
         bar_with_time = self.bar_with_times[-1]
         return bar_with_time.bar.close
 
-    def _get_change(self):
+    def _get_change(self, change_window_minutes = 10, query_range_minutes = 1):
         '''
         return the change that is used to decide the trading signal.
+
+        :param change_window_minutes: the minutes timestamp difference between current and prev
+        :param query_range_minutes: e.g. if this is 10 minutes, it gets the change up down to past 10 minutes from now.
         :return:
         '''
-        df_change = self.get_change_df('close', 10, 1)
+        df_change = self.get_change_df('close', change_window_minutes, query_range_minutes)
         if len(df_change) == 0:
             return False
         change = df_change.close.values[-1]
