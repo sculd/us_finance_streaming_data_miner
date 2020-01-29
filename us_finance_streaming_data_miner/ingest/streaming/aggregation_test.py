@@ -81,6 +81,48 @@ class TestAggregation(unittest.TestCase):
         self.assertEqual(90, bar_t_3.bar.close)
         self.assertEqual(2, bar_t_3.bar.volume)
 
+    def test_on_bar_with_time(self):
+        symbol = 'DUMMY_SYMBOL'
+        one_minute_seconds = 60
+        time_0 = datetime.datetime.fromtimestamp(0)
+        time_2 = datetime.datetime.fromtimestamp(one_minute_seconds * 2)
+        aggregation = Aggregation(symbol)
+
+        aggregation.on_bar_with_time(BarWithTime(time_0, Bar(symbol, 100, 110, 90, 110, 1.0)))
+
+        # skip minute 1
+
+        aggregation.on_bar_with_time(BarWithTime(time_2, Bar(symbol, 110, 130, 100, 130, 3.0)))
+
+        self.assertEqual(3, len(aggregation.bar_with_times))
+
+        bar_t_0 = aggregation.bar_with_times[0]
+        self.assertEqual(bar_t_0.time.timestamp(), 0)
+        self.assertEqual(symbol, bar_t_0.bar.symbol)
+        self.assertEqual(100, bar_t_0.bar.open)
+        self.assertEqual(110, bar_t_0.bar.high)
+        self.assertEqual(90, bar_t_0.bar.low)
+        self.assertEqual(110, bar_t_0.bar.close)
+        self.assertEqual(1, bar_t_0.bar.volume)
+
+        bar_t_1 = aggregation.bar_with_times[1]
+        self.assertEqual(bar_t_1.time.timestamp(), one_minute_seconds)
+        self.assertEqual(symbol, bar_t_1.bar.symbol)
+        self.assertEqual(110, bar_t_1.bar.open)
+        self.assertEqual(110, bar_t_1.bar.high)
+        self.assertEqual(110, bar_t_1.bar.low)
+        self.assertEqual(110, bar_t_1.bar.close)
+        self.assertEqual(0, bar_t_1.bar.volume)
+
+        bar_t_2 = aggregation.bar_with_times[2]
+        self.assertEqual(bar_t_2.time.timestamp(), one_minute_seconds * 2)
+        self.assertEqual(symbol, bar_t_2.bar.symbol)
+        self.assertEqual(110, bar_t_2.bar.open)
+        self.assertEqual(130, bar_t_2.bar.high)
+        self.assertEqual(100, bar_t_2.bar.low)
+        self.assertEqual(130, bar_t_2.bar.close)
+        self.assertEqual(3.0, bar_t_2.bar.volume)
+
     def test_minute_df(self):
         one_minute_seconds = 60
         symbol = 'DUMMY_SYMBOL'

@@ -86,6 +86,11 @@ class Aggregation:
         bar_timestamped = BarWithTime(BarWithTime.truncate_to_minute(trade.timestamp_seconds), Bar.new_bar_with_trade(trade.symbol, trade.price, 0))
         self.bar_with_times.append(bar_timestamped)
 
+    def _on_first_bar_with_time(self, bar_with_time):
+        assert self.symbol == bar_with_time.bar.symbol
+        bar_timestamped = BarWithTime(bar_with_time.time, bar_with_time.bar)
+        self.bar_with_times.append(bar_timestamped)
+
     def _new_bar_with_zero_volume(self, t, price):
         bar_timestamped = BarWithTime(t, Bar.new_bar_with_trade(self.symbol, price, 0))
         self.bar_with_times.append(bar_timestamped)
@@ -110,6 +115,30 @@ class Aggregation:
         bar_with_time = self.bar_with_times[-1]
         assert bar_with_time.time == trade_t
         bar_with_time.bar.on_trade(trade)
+
+    def on_bar_with_time(self, new_bar_with_time):
+        assert self.symbol == new_bar_with_time.bar.symbol
+        if not self.bar_with_times:
+            self._on_first_bar_with_time(new_bar_with_time)
+
+        bar_t = new_bar_with_time.time
+        while True:
+            bar_with_time = self.bar_with_times[-1]
+            if bar_with_time.time == bar_t:
+                break
+
+            time = bar_with_time.get_next_bar_time()
+            price = bar_with_time.bar.close
+            if time == bar_t:
+                price = bar_with_time.bar.open
+            self._new_bar_with_zero_volume(time, price)
+
+        inserted_bar = self.bar_with_times[-1].bar
+        inserted_bar.open = new_bar_with_time.bar.open
+        inserted_bar.high = new_bar_with_time.bar.high
+        inserted_bar.low = new_bar_with_time.bar.low
+        inserted_bar.close = new_bar_with_time.bar.close
+        inserted_bar.volume = new_bar_with_time.bar.volume
 
     def get_minute_df(self, range_minutes = None, print_log = True):
         if print_log:
@@ -156,6 +185,12 @@ class Aggregations:
         if trade.symbol not in self.aggregation_per_symbol:
             self.aggregation_per_symbol[trade.symbol] = Aggregation(trade.symbol)
         self.aggregation_per_symbol[trade.symbol].on_trade(trade)
+
+    def on_bar_with_time(self, bar_with_time):
+        symbol = bar_with_time.bar.symbol
+        if symbol not in self.aggregation_per_symbol:
+            self.aggregation_per_symbol[symbol] = Aggregation(symbol)
+        self.aggregation_per_symbol[symbol].on_bar_with_time(bar_with_time)
 
     def get_minute_df(self, print_log = True):
         if print_log:
@@ -211,6 +246,10 @@ class AggregationsRun:
     def on_trade(self, trade):
         if self.daily_trade_started:
             self.aggregations.on_trade(trade)
+
+    def on_bar_with_time(self, bar_with_time):
+        if self.daily_trade_started:
+            self.aggregations.on_bar_with_time(bar_with_time)
 
     def on_daily_trade_start(self):
         logging.info('on_daily_trade_start')
