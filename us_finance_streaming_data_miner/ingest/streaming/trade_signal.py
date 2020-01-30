@@ -60,25 +60,55 @@ class TradeSignal(Aggregation):
         df_ag_change = (df_ag.diff(change_window_minutes) / df_ag.shift(change_window_minutes)).iloc[-query_range_minutes:]
         return df_ag_change
 
-    def _get_close_price(self):
-        if not len(self.bar_with_times):
-            return 0
-        bar_with_time = self.bar_with_times[-1]
-        return bar_with_time.bar.close
-
     def _get_change(self, change_window_minutes = 10, query_range_minutes = 1):
         '''
         return the change that is used to decide the trading signal.
 
         :param change_window_minutes: the minutes timestamp difference between current and prev
         :param query_range_minutes: e.g. if this is 10 minutes, it gets the change up down to past 10 minutes from now.
-        :return:
+        :return: a value of numpy.float32 type
         '''
         df_change = self.get_change_df('close', change_window_minutes, query_range_minutes)
         if len(df_change) == 0:
             return False
         change = df_change.close.values[-1]
         return change
+
+    def get_value_df(self, column_names, query_range_minutes):
+        '''
+        Gets the values DataFrame.
+
+        :param column_names: a list of column names
+        :param query_range_minutes: e.g. if this is 10 minutes, it gets the change up down to past 10 minutes from now.
+        :return:
+        '''
+        ag = Aggregation(self.symbol)
+        ag.bar_with_times = self.bar_with_times[-(query_range_minutes):]
+        df_ag = ag.get_minute_df(print_log=False).set_index('datetime')[column_names]
+        df_ag_change = df_ag.iloc[-query_range_minutes:]
+        return df_ag_change
+
+    def get_quantity_df(self, query_range_minutes):
+        '''
+        Gets the close * volume DataFrame, whose column name is "quantity".
+
+        :param query_range_minutes: e.g. if this is 10 minutes, it gets the change up down to past 10 minutes from now.
+        :return:
+        '''
+        df = self.get_value_df(['close', 'volume'], query_range_minutes)
+        df['quantity'] = df.close * df.volume
+        return df
+
+    def _get_close_price(self):
+        '''
+        get the latest close price.
+
+        :return: a value of numpy.float32 type
+        '''
+        if not len(self.bar_with_times):
+            return 0
+        bar_with_time = self.bar_with_times[-1]
+        return bar_with_time.bar.close
 
     def get_is_trading_signal(self):
         '''
