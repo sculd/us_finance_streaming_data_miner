@@ -66,7 +66,7 @@ class TradeSignal(Aggregation):
 
         :param change_window_minutes: the minutes timestamp difference between current and prev
         :param query_range_minutes: e.g. if this is 10 minutes, it gets the change up down to past 10 minutes from now.
-        :return: a value of numpy.float32 type
+        :return: a value of numpy.float64 type
         '''
         df_change = self.get_change_df('close', change_window_minutes, query_range_minutes)
         if len(df_change) == 0:
@@ -98,6 +98,16 @@ class TradeSignal(Aggregation):
         df = self.get_value_df(['close', 'volume'], query_range_minutes)
         df['quantity'] = df.close * df.volume
         return df
+
+    def get_cumulative_quantity_df(self, query_range_minutes):
+        '''
+        Gets the accumulative quantity (close * volume) value.
+
+        :param numpy.float64 value.
+        :return:
+        '''
+        df = self.get_quantity_df(query_range_minutes)
+        return df.quantity.sum()
 
     def _get_close_price(self):
         '''

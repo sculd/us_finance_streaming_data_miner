@@ -87,5 +87,15 @@ class TestAggregation(unittest.TestCase):
         self.assertEqual(0, df.quantity.values[1])
         self.assertEqual(220.0, df.quantity.values[2])
 
+    def test_get_cumulative_quantity_df(self):
+        symbol = 'DUMMY_SYMBOL'
+        signal = TradeSignal(100, symbol)
+        signal.on_trade(Trade(0 * 60, symbol, 100.0, 1.0))
+        # skip miniute 1
+        signal.on_trade(Trade(2 * 60, symbol, 110.0, 2.0))
+
+        cq = signal.get_cumulative_quantity_df(5)
+        self.assertEqual(320.0, cq)
+
 
 
