@@ -132,7 +132,7 @@ class TradeSignal(Aggregation):
         self.epoch_seconds_long_position_start = self.current_time.get_current_epoch_seconds()
 
     def _on_short_position_enter(self):
-        self.in_long_position = True
+        self.in_short_position = True
         self.epoch_seconds_short_position_start = self.current_time.get_current_epoch_seconds()
 
     def on_new_minute(self):
