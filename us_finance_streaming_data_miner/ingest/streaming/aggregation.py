@@ -70,6 +70,7 @@ class Aggregation:
     def __init__(self, symbol):
         self.symbol = symbol
         self.bar_with_times = []
+        self._bar_with_times_max_length = 300
         self.t_now_tz = None
 
     def set_now_tz(self, now_tz):
@@ -85,15 +86,22 @@ class Aggregation:
         assert self.symbol == trade.symbol
         bar_timestamped = BarWithTime(BarWithTime.truncate_to_minute(trade.timestamp_seconds), Bar.new_bar_with_trade(trade.symbol, trade.price, 0))
         self.bar_with_times.append(bar_timestamped)
+        self._on_append_new_bar_with_time()
 
     def _on_first_bar_with_time(self, bar_with_time):
         assert self.symbol == bar_with_time.bar.symbol
         bar_timestamped = BarWithTime(bar_with_time.time, bar_with_time.bar)
         self.bar_with_times.append(bar_timestamped)
+        self._on_append_new_bar_with_time()
 
     def _new_bar_with_zero_volume(self, t, price):
         bar_timestamped = BarWithTime(t, Bar.new_bar_with_trade(self.symbol, price, 0))
         self.bar_with_times.append(bar_timestamped)
+        self._on_append_new_bar_with_time()
+
+    def _on_append_new_bar_with_time(self):
+        if len(self.bar_with_times) > self._bar_with_times_max_length:
+            self.bar_with_times = self.bar_with_times[-self._bar_with_times_max_length:]
 
     def on_trade(self, trade):
         assert self.symbol == trade.symbol
