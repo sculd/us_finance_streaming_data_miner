@@ -252,8 +252,8 @@ class Aggregations:
         )
 
 class AggregationsRun:
-    def __init__(self):
-        self.aggregations = Aggregations()
+    def __init__(self, aggregations = None):
+        self.aggregations = aggregations if aggregations else Aggregations()
         self.daily_trade_started = True
 
     def print_msg(self, msg):
