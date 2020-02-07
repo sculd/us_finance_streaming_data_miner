@@ -38,7 +38,7 @@ class TradeSignal(Aggregation):
 
     def on_ingest(self):
         if self._is_trade_on_new_minute():
-            trading_signal_mode = self.get_is_trading_signal()
+            trading_signal_mode = self.get_trading_signal()
             if trading_signal_mode is TRADE_SIGNAL_MODE.LONG_SIGNAL:
                 self.enter_long_position()
             elif trading_signal_mode is TRADE_SIGNAL_MODE.SHORT_SIGNAL:
@@ -120,7 +120,7 @@ class TradeSignal(Aggregation):
         bar_with_time = self.bar_with_times[-1]
         return bar_with_time.bar.close
 
-    def get_is_trading_signal(self):
+    def get_trading_signal(self):
         '''
         Gets if the signal is positive for entering in a position.
         :return:
@@ -175,6 +175,5 @@ class TradeSignals(Aggregations):
         super(TradeSignals, self).on_trade(trade)
 
     def on_new_minute(self):
-        util_logging.debug("TradeSignals.on_new_minute")
         for _, aggregation in self.aggregation_per_symbol.items():
             aggregation.on_new_minute()
