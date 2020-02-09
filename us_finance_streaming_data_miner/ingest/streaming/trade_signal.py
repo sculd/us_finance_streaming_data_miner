@@ -30,6 +30,7 @@ class TradeSignal(Aggregation):
         self.last_ingest_epoch_seconds = 0
         self.positionsize = positionsize
         self.position_mode = POSITION_MODE.NO_POSITION
+        self.prev_position_mode = POSITION_MODE.NO_POSITION
 
         self.in_long_position = False
         self.long_enter_price = 0
@@ -56,31 +57,11 @@ class TradeSignal(Aggregation):
         self.on_ingest()
 
     def _update_position_mode_on_market_signal(self, market_signal):
-        self.position_mode = POSITION_MODE.NO_POSITION
+        pass
 
-    def update_position_mode_get_trading_action(self):
+    def update_position_mode_on_ingest(self):
         market_signal = self.get_market_signal()
-
-        prev_position_mode = self.position_mode
         self._update_position_mode_on_market_signal(market_signal)
-        new__position_mode = self.position_mode
-
-        if prev_position_mode == new__position_mode:
-            return TRADING_ACTION.NO_ACTION
-
-        if new__position_mode is POSITION_MODE.SHORT_ENTERED:
-            return TRADING_ACTION.ENTER_SHORT
-
-        if new__position_mode is POSITION_MODE.LONG_ENTERED:
-            return TRADING_ACTION.ENTER_LONG
-
-        if new__position_mode is POSITION_MODE.NO_POSITION:
-            if prev_position_mode is POSITION_MODE.SHORT_ENTERED:
-                return TRADING_ACTION.EXIT_SHORT
-            if prev_position_mode is POSITION_MODE.LONG_ENTERED:
-                return TRADING_ACTION.EXIT_LONG
-
-        return TRADING_ACTION.NO_ACTION
 
     def on_ingest(self):
         '''
@@ -90,13 +71,45 @@ class TradeSignal(Aggregation):
         :return:
         '''
         if self._is_trade_on_new_minute():
-            trading_action = self.update_position_mode_get_trading_action()
-            if trading_action is TRADING_ACTION.ENTER_LONG:
-                self.enter_long_position()
-            elif trading_action is TRADING_ACTION.ENTER_SHORT:
-                self.enter_short_position()
+            self.update_position_mode_on_ingest()
 
         self._update_last_ingest_epoch_seconds()
+
+    def _update_position_mode(self, position_mode):
+        self.prev_position_mode = self.position_mode
+        self.position_mode = position_mode
+        self._on_position_mode_update()
+
+    def _on_position_mode_update(self):
+        def get_traging_action():
+            prev = self.prev_position_mode
+            new = self.position_mode
+            if prev == new:
+                return TRADING_ACTION.NO_ACTION
+
+            if new is POSITION_MODE.SHORT_ENTERED:
+                return TRADING_ACTION.ENTER_SHORT
+
+            if new is POSITION_MODE.LONG_ENTERED:
+                return TRADING_ACTION.ENTER_LONG
+
+            if new is POSITION_MODE.NO_POSITION:
+                if prev is POSITION_MODE.SHORT_ENTERED:
+                    return TRADING_ACTION.EXIT_SHORT
+                if prev is POSITION_MODE.LONG_ENTERED:
+                    return TRADING_ACTION.EXIT_LONG
+
+            return TRADING_ACTION.NO_ACTION
+
+        trading_action = get_traging_action()
+        if trading_action is TRADING_ACTION.ENTER_LONG:
+            self.enter_long_position()
+        elif trading_action is TRADING_ACTION.ENTER_SHORT:
+            self.enter_short_position()
+        elif trading_action is TRADING_ACTION.EXIT_LONG:
+            self._clear_long_position()
+        elif trading_action is TRADING_ACTION.EXIT_SHORT:
+            self._clear_short_position()
 
     def on_trading_action_done(self, trading_action):
         target_price = self._get_close_price()
@@ -198,6 +211,16 @@ class TradeSignal(Aggregation):
     def _on_short_position_enter(self):
         self.in_short_position = True
         self.on_trading_action_done( TRADING_ACTION.ENTER_SHORT)
+
+    def _clear_long_position(self):
+        if not self.in_long_position:
+            return
+        self.in_long_position = False
+
+    def _clear_short_position(self):
+        if not self.in_short_position:
+            return
+        self.in_short_position = False
 
     def on_new_minute(self):
         pass

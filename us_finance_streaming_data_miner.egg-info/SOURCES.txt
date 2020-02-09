@@ -14,4 +14,3 @@ us_finance_streaming_data_miner/ingest/streaming/binance_run.py
 us_finance_streaming_data_miner/ingest/streaming/polygon_run.py
 us_finance_streaming_data_miner/ingest/streaming/trade_signal.py
 us_finance_streaming_data_miner/ingest/streaming/trade_signal_test.py
-us_finance_streaming_data_miner/ingest/streaming/trading_logic.py
