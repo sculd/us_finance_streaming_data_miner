@@ -55,14 +55,14 @@ class TradeSignal(Aggregation):
         super(TradeSignal, self).on_bar_with_time(bar_with_time)
         self.on_ingest()
 
-    def _update_position_mode_on_new_minute(self, market_signal):
+    def _update_position_mode_on_market_signal(self, market_signal):
         self.position_mode = POSITION_MODE.NO_POSITION
 
     def update_position_mode_get_trading_action(self):
         market_signal = self.get_market_signal()
 
         prev_position_mode = self.position_mode
-        self._update_position_mode_on_new_minute(market_signal)
+        self._update_position_mode_on_market_signal(market_signal)
         new__position_mode = self.position_mode
 
         if prev_position_mode == new__position_mode:
