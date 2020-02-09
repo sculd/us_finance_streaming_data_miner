@@ -4,7 +4,7 @@ from us_finance_streaming_data_miner.ingest.streaming.aggregation import Aggrega
 import us_finance_streaming_data_miner.util.current_time as current_time
 from enum import Enum
 
-class TRADE_SIGNAL_MODE(Enum):
+class MARKET_SIGNAL_MODE(Enum):
     LONG_SIGNAL = 1
     SHORT_SIGNAL = 2
     NO_SIGNAL = 3
@@ -189,7 +189,7 @@ class TradeSignal(Aggregation):
         Gets if the signal is positive for entering in a position.
         :return:
         '''
-        return TRADE_SIGNAL_MODE.NO_SIGNAL
+        return MARKET_SIGNAL_MODE.NO_SIGNAL
 
     def _on_long_position_enter(self):
         self.in_long_position = True
