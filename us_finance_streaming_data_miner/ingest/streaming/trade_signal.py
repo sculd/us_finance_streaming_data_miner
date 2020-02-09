@@ -1,7 +1,6 @@
 import datetime, threading, time
 import us_finance_streaming_data_miner.util.logging as util_logging
 from us_finance_streaming_data_miner.ingest.streaming.aggregation import Aggregation, Aggregations
-import us_finance_streaming_data_miner.ingest.streaming.trading_logic as trading_logic
 import us_finance_streaming_data_miner.util.current_time as current_time
 from enum import Enum
 
@@ -10,15 +9,35 @@ class TRADE_SIGNAL_MODE(Enum):
     SHORT_SIGNAL = 2
     NO_SIGNAL = 3
 
+class POSITION_MODE(Enum):
+    NO_POSITION = 1
+    SHORT_SEEKING_ENTRY = 2
+    SHORT_ENTERED = 3
+    LONG_SEEKING_ENTRY = 4
+    LONG_ENTERED = 5
+
+class TRADING_ACTION(Enum):
+    NO_ACTION = 1
+    ENTER_LONG = 2
+    EXIT_LONG = 3
+    ENTER_SHORT = 4
+    EXIT_SHORT = 5
+
 class TradeSignal(Aggregation):
     def __init__(self, positionsize, symbol):
         super(TradeSignal, self).__init__(symbol)
-        self.in_long_position = False
-        self.in_short_position = False
-        self.trading_logic = trading_logic.TradingLogic(symbol)
         self.current_time = current_time.CurrentTime()
         self.last_ingest_epoch_seconds = 0
         self.positionsize = positionsize
+        self.position_mode = POSITION_MODE.NO_POSITION
+
+        self.in_long_position = False
+        self.long_enter_price = 0
+        self.epoch_seconds_long_position_start = 0
+
+        self.in_short_position = False
+        self.short_enter_price = 0
+        self.epoch_seconds_short_position_start = 0
 
     def _is_trade_on_new_minute(self):
         epoch_seconds = self.current_time.get_current_epoch_seconds()
@@ -36,6 +55,33 @@ class TradeSignal(Aggregation):
         super(TradeSignal, self).on_bar_with_time(bar_with_time)
         self.on_ingest()
 
+    def _update_position_mode_on_new_minute(self, market_signal):
+        self.position_mode = POSITION_MODE.NO_POSITION
+
+    def update_position_mode_get_trading_action(self):
+        market_signal = self.get_market_signal()
+
+        prev_position_mode = self.position_mode
+        self._update_position_mode_on_new_minute(market_signal)
+        new__position_mode = self.position_mode
+
+        if prev_position_mode == new__position_mode:
+            return TRADING_ACTION.NO_ACTION
+
+        if new__position_mode is POSITION_MODE.SHORT_ENTERED:
+            return TRADING_ACTION.ENTER_SHORT
+
+        if new__position_mode is POSITION_MODE.LONG_ENTERED:
+            return TRADING_ACTION.ENTER_LONG
+
+        if new__position_mode is POSITION_MODE.NO_POSITION:
+            if prev_position_mode is POSITION_MODE.SHORT_ENTERED:
+                return TRADING_ACTION.EXIT_SHORT
+            if prev_position_mode is POSITION_MODE.LONG_ENTERED:
+                return TRADING_ACTION.EXIT_LONG
+
+        return TRADING_ACTION.NO_ACTION
+
     def on_ingest(self):
         '''
         Decides the trading decision.
@@ -44,17 +90,25 @@ class TradeSignal(Aggregation):
         :return:
         '''
         if self._is_trade_on_new_minute():
-            cp = self._get_close_price()
-            trading_signal_mode = self.get_trading_signal()
-            epoch = self.current_time.get_current_epoch_seconds()
-
-            trading_action = self.trading_logic.update_position_mode_get_trading_action(cp, trading_signal_mode, epoch)
-            if trading_action is trading_logic.TRADING_ACTION.ENTER_LONG:
+            trading_action = self.update_position_mode_get_trading_action()
+            if trading_action is TRADING_ACTION.ENTER_LONG:
                 self.enter_long_position()
-            elif trading_action is trading_logic.TRADING_ACTION.ENTER_SHORT:
+            elif trading_action is TRADING_ACTION.ENTER_SHORT:
                 self.enter_short_position()
 
         self._update_last_ingest_epoch_seconds()
+
+    def on_trading_action_done(self, trading_action):
+        target_price = self._get_close_price()
+        epoch_seconds = self.current_time.get_current_epoch_seconds()
+
+        if trading_action is TRADING_ACTION.ENTER_SHORT:
+            self.short_enter_price = target_price
+            self.epoch_seconds_short_position_start = epoch_seconds
+
+        elif trading_action is TRADING_ACTION.ENTER_LONG:
+            self.long_enter_price = target_price
+            self.epoch_seconds_long_position_start = epoch_seconds
 
     def get_change_df(self, column_name, change_window_minutes, query_range_minutes):
         '''
@@ -130,7 +184,7 @@ class TradeSignal(Aggregation):
         bar_with_time = self.bar_with_times[-1]
         return bar_with_time.bar.close
 
-    def get_trading_signal(self):
+    def get_market_signal(self):
         '''
         Gets if the signal is positive for entering in a position.
         :return:
@@ -139,15 +193,11 @@ class TradeSignal(Aggregation):
 
     def _on_long_position_enter(self):
         self.in_long_position = True
-        cp = self._get_close_price()
-        epoch = self.current_time.get_current_epoch_seconds()
-        self.trading_logic.on_trading_action_done(trading_logic.TRADING_ACTION.ENTER_LONG, cp, epoch)
+        self.on_trading_action_done(TRADING_ACTION.ENTER_LONG)
 
     def _on_short_position_enter(self):
         self.in_short_position = True
-        cp = self._get_close_price()
-        epoch = self.current_time.get_current_epoch_seconds()
-        self.trading_logic.on_trading_action_done(trading_logic.TRADING_ACTION.ENTER_SHORT, cp, epoch)
+        self.on_trading_action_done( TRADING_ACTION.ENTER_SHORT)
 
     def on_new_minute(self):
         pass

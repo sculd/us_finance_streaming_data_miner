@@ -98,4 +98,3 @@ class TestAggregation(unittest.TestCase):
         self.assertEqual(320.0, cq)
 
 
-
