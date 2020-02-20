@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
    name='us_finance_streaming_data_miner',
-   version='0.40',
+   version='0.41',
    description='A module to stream read us data',
    author='Hyungjun Lim',
    author_email='sculd3@gmail.com',

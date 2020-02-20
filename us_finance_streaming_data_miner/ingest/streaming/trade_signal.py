@@ -11,6 +11,13 @@ class MARKET_SIGNAL_MODE(Enum):
     LONG_WEAK_SIGNAL = 4
     SHORT_WEAK_SIGNAL = 5
 
+class SHORT_TERM_MARKET_SIGNAL_MODE(Enum):
+    LONG_SIGNAL = 1
+    SHORT_SIGNAL = 2
+    NO_SIGNAL = 3
+    LONG_WEAK_SIGNAL = 4
+    SHORT_WEAK_SIGNAL = 5
+
 class POSITION_MODE(Enum):
     NO_POSITION = 1
     SHORT_SEEKING_ENTRY = 2
@@ -58,12 +65,14 @@ class TradeSignal(Aggregation):
         super(TradeSignal, self).on_bar_with_time(bar_with_time)
         self.on_ingest()
 
-    def _update_position_mode_on_market_signal(self, market_signal):
+    def _update_position_mode_on_market_signal(self, market_signal, short_term_market_signal):
         pass
 
     def update_position_mode_on_ingest(self):
         market_signal = self.get_market_signal()
-        self._update_position_mode_on_market_signal(market_signal)
+        short_term_market_signal = self.get_short_term_market_signal()
+
+        self._update_position_mode_on_market_signal(market_signal, short_term_market_signal)
 
     def on_ingest(self):
         '''
@@ -205,6 +214,9 @@ class TradeSignal(Aggregation):
         :return:
         '''
         return MARKET_SIGNAL_MODE.NO_SIGNAL
+
+    def get_short_term_market_signal(self):
+        return SHORT_TERM_MARKET_SIGNAL_MODE.NO_SIGNAL
 
     def _on_long_position_enter(self):
         self.in_long_position = True
