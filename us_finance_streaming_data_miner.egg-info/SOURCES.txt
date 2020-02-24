@@ -11,6 +11,7 @@ us_finance_streaming_data_miner/ingest/streaming/__init__.py
 us_finance_streaming_data_miner/ingest/streaming/aggregation.py
 us_finance_streaming_data_miner/ingest/streaming/aggregation_test.py
 us_finance_streaming_data_miner/ingest/streaming/binance_run.py
+us_finance_streaming_data_miner/ingest/streaming/daily_aggregation.py
 us_finance_streaming_data_miner/ingest/streaming/polygon_run.py
 us_finance_streaming_data_miner/ingest/streaming/trade_signal.py
 us_finance_streaming_data_miner/ingest/streaming/trade_signal_test.py
