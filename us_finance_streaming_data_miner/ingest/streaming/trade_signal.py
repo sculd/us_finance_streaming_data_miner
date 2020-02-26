@@ -145,7 +145,10 @@ class TradeSignal(Aggregation):
         ag = Aggregation(self.symbol)
         ag.bar_with_times = self.bar_with_times[-(query_range_minutes + change_window_minutes):]
         df_ag = ag.get_minute_df(print_log=False).set_index('datetime')[[column_name]]
-        df_ag_change = (df_ag.diff(change_window_minutes) / df_ag.shift(change_window_minutes)).iloc[-query_range_minutes:]
+        if len(df_ag) == 0:
+            return 0
+        first_val = df_ag.iloc[0][column_name]
+        df_ag_change = (df_ag.diff(change_window_minutes).fillna(0) / df_ag.shift(change_window_minutes).fillna(first_val)).iloc[-query_range_minutes:]
         return df_ag_change
 
     def _get_change(self, change_window_minutes = 10, query_range_minutes = 1):
